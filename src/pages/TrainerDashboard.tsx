@@ -1,0 +1,179 @@
+import { useState, useEffect } from "react";
+import { UserProfile, ChatRoom } from "../types";
+import { formatPrice } from "../lib/currency";
+import { getLocalizedString } from "../lib/utils";
+import { db } from "../lib/firebase";
+import { collection, query, where, getDocs, orderBy, doc, getDoc, updateDoc } from "firebase/firestore";
+import { motion } from "motion/react";
+import { MessageSquare, Wallet, Trophy, User, ChevronLeft } from "lucide-react";
+import { Link } from "react-router-dom";
+
+export default function TrainerDashboard({ user, lang }: { user: UserProfile, lang: "ar" | "en" }) {
+  const [activeChats, setActiveChats] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [trainerUser, setTrainerUser] = useState<UserProfile>(user);
+  const [newPrice, setNewPrice] = useState<string>(user.price?.toString() || "0");
+  const [updatingPrice, setUpdatingPrice] = useState(false);
+
+  const t = {
+      title: lang === "ar" ? "لوحة تحكم المدرب" : "Trainer Dashboard",
+      totalBalance: lang === "ar" ? "رصيدك الكلي" : "Total Balance",
+      consultationPrice: lang === "ar" ? "سعر الاستشارة" : "Consultation Price",
+      enterPrice: lang === "ar" ? "أدخل السعر" : "Enter price",
+      update: lang === "ar" ? "تحديث" : "Update",
+      updating: lang === "ar" ? "جاري..." : "Updating...",
+      success: lang === "ar" ? "تم تحديث قيمة الاستشارة بنجاح" : "Consultation price updated successfully",
+      error: lang === "ar" ? "حدث خطأ أثناء التحديث" : "Error while updating",
+      messages: lang === "ar" ? "الرسائل القادمة" : "Incoming Messages",
+      noMessages: lang === "ar" ? "لا توجد رسائل حالياً" : "No messages currently",
+      trainerTip: lang === "ar" ? "نصيحة للمدرب:" : "Trainer Tip:",
+      trainerTipDesc: lang === "ar" 
+          ? "قم بالرد السريع على استفسارات المشتركين وإرسال عرض سعر (كوتة) مخصص لجلسات التدريب لزيادة دخلك في المحفظة." 
+          : "Respond quickly to subscriber inquiries and send custom quotes for training sessions to increase your wallet income.",
+      unknownUser: lang === "ar" ? "مستخدم غير معروف" : "Unknown User"
+  };
+
+  useEffect(() => {
+    const fetch = async () => {
+      // Refresh current trainer state for wallet
+      const tSnap = await getDoc(doc(db, "users", user.uid));
+      if (tSnap.exists()) {
+        const data = tSnap.data() as UserProfile;
+        setTrainerUser(data);
+        setNewPrice(data.price?.toString() || "0");
+      }
+
+      const q = query(
+        collection(db, "chats"),
+        where("expertId", "==", user.uid)
+      );
+      const snap = await getDocs(q);
+      
+      const chatData = await Promise.all(snap.docs.map(async d => {
+          const data = d.data() as ChatRoom;
+          const userId = data.participants.find((p: string) => p !== user.uid);
+          let userName = t.unknownUser;
+          let userImg = null;
+
+          if (userId) {
+              const userSnap = await getDoc(doc(db, "users", userId));
+              if (userSnap.exists()) {
+                  const uData = userSnap.data();
+                  userName = getLocalizedString(uData.name, lang);
+                  userImg = uData.profilePic || uData.image;
+              }
+          }
+
+          return { 
+              ...data, 
+              id: d.id, 
+              userName,
+              userImg
+          };
+      }));
+      
+      setActiveChats(chatData.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)));
+      setLoading(false);
+    };
+    fetch();
+  }, [user.uid, lang]);
+
+  const handleUpdatePrice = async () => {
+    setUpdatingPrice(true);
+    try {
+      const priceVal = parseFloat(newPrice);
+      await updateDoc(doc(db, "users", user.uid), {
+        price: priceVal
+      });
+      setTrainerUser(prev => ({ ...prev, price: priceVal }));
+      alert(t.success);
+    } catch (err) {
+      console.error(err);
+      alert(t.error);
+    }
+    setUpdatingPrice(false);
+  };
+
+  return (
+    <div className="flex flex-col flex-1 pb-32" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <header className="p-4 pt-12 space-y-4">
+        <h1 className="text-3xl font-black italic tracking-tighter">{t.title}</h1>
+        
+        <div className="primary-gradient p-6 rounded-3xl text-background-dark flex items-center justify-between shadow-xl shadow-primary/20">
+            <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">{t.totalBalance}</p>
+                <p className="text-3xl font-black">{formatPrice(trainerUser.walletBalance, trainerUser)}</p>
+            </div>
+            <div className="w-14 h-14 bg-background-dark/10 rounded-2xl flex items-center justify-center">
+                <Trophy size={28} />
+            </div>
+        </div>
+      </header>
+
+      <main className="p-4 space-y-6">
+        {/* Set Consultation Price */}
+        <div className="glass p-6 rounded-3xl space-y-4 border border-white/5">
+          <div className="flex items-center gap-2">
+            <Wallet size={18} className="text-primary" />
+            <h3 className="text-sm font-black uppercase tracking-widest text-[var(--text-main)]">{t.consultationPrice}</h3>
+          </div>
+          <div className="flex gap-3">
+            <div className="flex-1 bg-white/5 rounded-2xl px-4 py-3 border border-white/5 focus-within:border-primary/50 transition-all flex items-center gap-2">
+              <input 
+                type="number" 
+                className="bg-transparent border-none focus:ring-0 w-full font-bold text-sm text-[var(--text-main)]" 
+                value={newPrice}
+                onChange={(e) => setNewPrice(e.target.value)}
+                placeholder={t.enterPrice}
+              />
+              <span className="text-[10px] font-black text-white/20 uppercase">{trainerUser.serviceCurrency || trainerUser.currency || "JOD"}</span>
+            </div>
+            <button 
+              onClick={handleUpdatePrice}
+              disabled={updatingPrice}
+              className="primary-gradient text-background-dark px-6 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/20 active:scale-95 transition-all disabled:opacity-50"
+            >
+              {updatingPrice ? t.updating : t.update}
+            </button>
+          </div>
+        </div>
+
+        <h2 className="text-xl font-bold tracking-tight px-1 flex items-center gap-2">
+            <MessageSquare size={18} className="text-primary" /> {t.messages}
+        </h2>
+
+        <div className="space-y-4">
+            {loading ? (
+                [1, 2].map(i => <div key={i} className="h-24 glass rounded-3xl animate-pulse" />)
+            ) : activeChats.length > 0 ? (
+                activeChats.map((chat) => (
+                    <Link to={`/chat/${chat.id}`} key={chat.id} className="glass rounded-3xl p-4 flex items-center justify-between group hover:border-primary/30 transition-all border border-white/5">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-2xl glass p-0.5 relative">
+                                <img src={chat.userImg || `https://ui-avatars.com/api/?name=${chat.userName}`} className="w-full h-full object-cover rounded-[14px]" alt="" />
+                                <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-primary border-2 border-background-dark rounded-full"></div>
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-sm tracking-tight">{chat.userName}</h4>
+                                <p className="text-[10px] text-white/40 mt-1 line-clamp-1">{chat.lastMessage}</p>
+                            </div>
+                        </div>
+                        <ChevronLeft size={16} className={`text-white/20 group-hover:text-primary transition-colors ${lang === 'en' ? 'rotate-180' : ''}`} />
+                    </Link>
+                ))
+            ) : (
+                <div className="text-center py-20 text-white/20 border-2 border-dashed border-white/5 rounded-3xl text-sm font-bold uppercase tracking-widest">
+                    {t.noMessages}
+                </div>
+            )}
+        </div>
+
+        {/* Action Suggestion */}
+        <div className="glass p-6 rounded-3xl space-y-3">
+            <h3 className="text-sm font-bold text-primary">{t.trainerTip}</h3>
+            <p className="text-xs text-white/60 leading-relaxed">{t.trainerTipDesc}</p>
+        </div>
+      </main>
+    </div>
+  );
+}
