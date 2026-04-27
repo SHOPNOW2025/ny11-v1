@@ -11,7 +11,7 @@ export default function SettingsPage({ user, lang }: { user: UserProfile, lang: 
     const navigate = useNavigate();
     const [name, setName] = useState(getLocalizedString(user.name, lang));
     const [email, setEmail] = useState(user.email);
-    const [image, setImage] = useState(user.profilePic || user.image || "");
+    const [image, setImage] = useState(user.profilePic || "");
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
 

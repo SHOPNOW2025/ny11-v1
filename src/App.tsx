@@ -131,15 +131,9 @@ export default function App() {
               <Route path="/profile" element={user ? <ProfilePage user={user} lang={lang} /> : <Navigate to="/auth" />} />
               
               {/* Role Specific Protected Routes */}
-              {user?.role === "ADMIN" && (
-                <Route path="/admin" element={<AdminDashboard user={user} lang={lang} />} />
-              )}
-              {user?.role === "LAB_MANAGER" && (
-                <Route path="/lab-manager" element={<LabManagerDashboard user={user} lang={lang} />} />
-              )}
-              {user?.role === "TRAINER" && (
-                <Route path="/trainer" element={<TrainerDashboard user={user} lang={lang} />} />
-              )}
+              <Route path="/admin" element={user?.role === "ADMIN" ? <AdminDashboard user={user} lang={lang} /> : <Navigate to="/" />} />
+              <Route path="/lab-manager" element={user?.role === "LAB_MANAGER" ? <LabManagerDashboard user={user} lang={lang} /> : <Navigate to="/" />} />
+              <Route path="/trainer" element={user?.role === "TRAINER" ? <TrainerDashboard user={user} lang={lang} /> : <Navigate to="/" />} />
               
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
