@@ -1,4 +1,4 @@
-const IMGBB_API_KEY = "8651c8d21d91d90c780590fa34ee35aa";
+const IMGBB_API_KEY = import.meta.env.VITE_IMGBB_API_KEY;
 
 export async function uploadImage(file: File): Promise<string> {
   const formData = new FormData();
