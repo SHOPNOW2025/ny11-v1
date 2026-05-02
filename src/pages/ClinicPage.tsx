@@ -26,7 +26,10 @@ export default function ClinicPage({ user, lang }: { user: UserProfile, lang: "a
             rating: data.rating || 5.0,
             price: data.price || 0,
             currency: data.serviceCurrency || data.currency || "JOD",
-            bio: typeof data.bio === 'object' ? data.bio : { ar: data.bio || "خبير متخصص في الرعاية الصحية", en: data.bio || "Healthcare Specialist" },
+            bio: {
+              ar: data.bio_ar || (typeof data.bio === 'object' ? data.bio?.ar : data.bio) || "خبير متخصص في الرعاية الصحية",
+              en: data.bio_en || (typeof data.bio === 'object' ? data.bio?.en : data.bio) || "Healthcare Specialist"
+            },
             online: data.online || false,
             name: typeof data.name === 'object' ? data.name : { ar: data.name || "خبير", en: data.name || "Expert" }
           } as Expert;

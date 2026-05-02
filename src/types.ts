@@ -8,6 +8,7 @@ export interface UserProfile {
   language?: "ar" | "en";
   walletBalance: number;
   profilePic?: string;
+  image?: string;
   createdAt: number;
   age?: number;
   goal?: "LOSE_WEIGHT" | "GAIN_WEIGHT" | "MAINTAIN" | "MUSCLE";
@@ -19,6 +20,8 @@ export interface UserProfile {
   rating?: number;
   price?: number;
   bio?: string;
+  bio_ar?: string;
+  bio_en?: string;
   online?: boolean;
 }
 

@@ -17,7 +17,8 @@ import {
     DollarSign,
     Coins,
     Camera,
-    Loader2
+    Loader2,
+    Info
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { formatPrice } from "../lib/currency";
@@ -114,6 +115,42 @@ export default function ProfilePage({ user, lang }: { user: UserProfile, lang: "
                 تبديل
             </button>
         </section>
+
+        {/* Bio Section for Experts */}
+        {(user.role === "TRAINER" || user.role === "LAB_MANAGER") && (
+          <section className="glass rounded-3xl p-5 space-y-4">
+            <div className="flex items-center gap-3 border-b border-white/5 pb-3">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                <Info size={16} />
+              </div>
+              <h3 className="text-sm font-bold">{lang === "ar" ? "نبذة تعريفية (بايو)" : "Professional Bio"}</h3>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-white/30 uppercase px-1">العربية</label>
+                <textarea 
+                  defaultValue={user.bio_ar}
+                  onBlur={(e) => updateDoc(doc(db, "users", user.uid), { bio_ar: e.target.value })}
+                  placeholder="اكتب نبذة عن خبرتك بالعربية..."
+                  className="w-full bg-white/5 border border-white/5 rounded-2xl p-3 text-xs min-h-[80px] focus:outline-none focus:border-primary/30 transition-colors"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-white/30 uppercase px-1">English</label>
+                <textarea 
+                  defaultValue={user.bio_en}
+                  onBlur={(e) => updateDoc(doc(db, "users", user.uid), { bio_en: e.target.value })}
+                  placeholder="Write about your expertise in English..."
+                  className="w-full bg-white/5 border border-white/5 rounded-2xl p-3 text-xs min-h-[80px] focus:outline-none focus:border-primary/30 transition-colors"
+                />
+              </div>
+              <p className="text-[9px] text-white/20 italic px-1">
+                * {lang === "ar" ? "سيتم الحفظ تلقائياً عند الخروج من الحقل" : "Changes are saved automatically on blur"}
+              </p>
+            </div>
+          </section>
+        )}
 
         {/* Dashboards based on role */}
         <section className="space-y-3">
