@@ -69,6 +69,10 @@ export default function App() {
   }, [isDark]);
 
   useEffect(() => {
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
     let unsubProfile: (() => void) | undefined;
 
     const unsubAuth = onAuthStateChanged(auth, async (firebaseUser) => {
