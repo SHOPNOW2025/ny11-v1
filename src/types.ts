@@ -1,4 +1,22 @@
-export type UserRole = "ADMIN" | "USER" | "TRAINER" | "LAB_MANAGER";
+export type UserRole = "ADMIN" | "USER" | "TRAINER" | "LAB_MANAGER" | "ACCOUNTANT";
+
+export interface WithdrawalRequest {
+  id: string;
+  userId: string;
+  userName: string;
+  userRole: UserRole;
+  amount: number;
+  method: "BANK" | "WALLET";
+  details: {
+    phoneNumber: string;
+    alias: string;
+    bankName?: string;
+    accountIban?: string;
+  };
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  reason?: string;
+  createdAt: number;
+}
 
 export interface UserProfile {
   uid: string;
@@ -37,6 +55,14 @@ export interface LocalizedString {
   en: string;
 }
 
+export type MenuCategory = "MENU" | "SUPPLEMENTS" | "BASIL";
+
+export interface CategorySettings {
+  id: MenuCategory;
+  image: string;
+  name: LocalizedString;
+}
+
 export interface MenuItem {
   id: string;
   name: LocalizedString;
@@ -48,7 +74,7 @@ export interface MenuItem {
   carbs: number;
   fats: number;
   ingredients: string[];
-  category: string;
+  category: MenuCategory;
   image: string;
 }
 
@@ -81,6 +107,8 @@ export interface ChatMessage {
   timestamp: number;
   type: "TEXT" | "QUOTE";
   quoteAmount?: number;
+  read?: boolean;
+  readAt?: number;
 }
 
 export interface ChatRoom {
@@ -90,6 +118,7 @@ export interface ChatRoom {
   updatedAt: number;
   type: "EXPERT" | "AI";
   expertId?: string;
+  unreadCount?: { [userId: string]: number };
 }
 
 export interface PromoCode {

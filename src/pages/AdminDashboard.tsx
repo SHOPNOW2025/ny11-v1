@@ -28,13 +28,14 @@ export default function AdminDashboard({ user, lang }: { user: UserProfile, lang
     dashboardTitle: lang === "ar" ? "لوحة التحكم" : "Admin Dashboard",
     tabDashboard: lang === "ar" ? "الرئيسية" : "Dashboard",
     tabUsers: lang === "ar" ? "الحسابات" : "Users",
-    tabMenu: lang === "ar" ? "المحتوى الغذائي" : "Dining Menu",
+    tabMenu: lang === "ar" ? "المتجر والمنيو" : "Store & Menu",
     tabLabs: lang === "ar" ? "المختبر" : "Lab Services",
     tabContent: lang === "ar" ? "النصائح والإعلانات" : "Content & Ads",
     tabKnowledge: lang === "ar" ? "تدريب المساعد" : "AI Training",
     tabFinance: lang === "ar" ? "المالية" : "Finance",
     tabPromo: lang === "ar" ? "أكواد الخصم" : "Promo Codes",
-    menuList: lang === "ar" ? "قائمة الوجبات" : "Menu List",
+    menuList: lang === "ar" ? "إدارة المنتجات" : "Product Management",
+    categorySettings: lang === "ar" ? "صور الأقسام" : "Category Images",
     labsList: lang === "ar" ? "قائمة التحاليل" : "Lab List",
     promoList: lang === "ar" ? "قائمة الأكواد" : "Promo List",
     contentList: lang === "ar" ? "المحتوى الترويجي" : "Promo Content",
@@ -55,11 +56,15 @@ export default function AdminDashboard({ user, lang }: { user: UserProfile, lang
     admin: lang === "ar" ? "ادمن" : "Admin",
     trainerRole: lang === "ar" ? "مدرب" : "Trainer",
     labManagerRole: lang === "ar" ? "مدير مختبر" : "Lab Manager",
+    accountantRole: lang === "ar" ? "محاسب" : "Accountant",
     aiKnowledgeDesc: lang === "ar" ? "سؤال وجواب للمساعد" : "AI Question & Answer",
     editData: lang === "ar" ? "تعديل البيانات" : "Edit Data",
     addNewRecord: lang === "ar" ? "إضافة سجل جديد" : "Add New Record",
     imageUploadFail: lang === "ar" ? "فشل رفع الصورة" : "Image upload failed",
-    saveChanges: lang === "ar" ? "حفظ التغييرات" : "Save Changes"
+    saveChanges: lang === "ar" ? "حفظ التغييرات" : "Save Changes",
+    catMenu: lang === "ar" ? "قسم المنيو" : "Dining Menu",
+    catSupplements: lang === "ar" ? "قسم المكملات الغذائية" : "Supplements",
+    catBasil: lang === "ar" ? "قسم منتجات الريحان" : "Basil Products"
   };
 
   useEffect(() => {
@@ -206,6 +211,8 @@ export default function AdminDashboard({ user, lang }: { user: UserProfile, lang
       <main className="p-4 space-y-6 flex-1">
         {tab === "DASHBOARD" && <StatsSection lang={lang} />}
 
+        {tab === "MENU" && <CategorySettingsSection lang={lang} user={user} />}
+
         <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-black tracking-tight uppercase italic underline decoration-primary/30 decoration-4 underline-offset-4">
                 {tab === "MENU" ? t.menuList : 
@@ -258,9 +265,10 @@ export default function AdminDashboard({ user, lang }: { user: UserProfile, lang
                                             className="bg-transparent border-none p-0 focus:ring-0 text-primary cursor-pointer"
                                         >
                                             <option value="USER" className="bg-background-dark">{t.user}</option>
-                                            <option value="ADMIN" className="bg-background-dark">{t.admin}</option>
                                             <option value="TRAINER" className="bg-background-dark">{t.trainerRole}</option>
+                                            <option value="ADMIN" className="bg-background-dark">{t.admin}</option>
                                             <option value="LAB_MANAGER" className="bg-background-dark">{t.labManagerRole}</option>
+                                            <option value="ACCOUNTANT" className="bg-background-dark">{t.accountantRole}</option>
                                         </select>
                                     ) : tab === "PROMO" ? (
                                         `${item.discountValue}${item.discountType === "PERCENTAGE" ? "%" : ""} - ${item.isActive ? "Active" : "Inactive"}`
@@ -406,7 +414,10 @@ function DetailView({ item, type, lang, onClose, onSave }: any) {
         usageLimit: lang === "ar" ? "حد الاستخدام" : "Usage Limit",
         isActive: lang === "ar" ? "مفعل" : "Is Active",
         percentage: lang === "ar" ? "نسبة مئوية" : "Percentage",
-        fixed: lang === "ar" ? "مبلغ ثابت" : "Fixed Amount"
+        fixed: lang === "ar" ? "مبلغ ثابت" : "Fixed Amount",
+        catMenu: lang === "ar" ? "قسم المنيو" : "Dining Menu",
+        catSupplements: lang === "ar" ? "قسم المكملات الغذائية" : "Supplements",
+        catBasil: lang === "ar" ? "قسم منتجات الريحان" : "Basil Products"
     };
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -551,6 +562,23 @@ function DetailView({ item, type, lang, onClose, onSave }: any) {
                         </>
                     )}
 
+                    {type === "MENU" && (
+                        <div className="space-y-2">
+                             <label className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] px-2">{t.category}</label>
+                             <div className="glass rounded-2xl px-5 border border-white/5 mt-2 overflow-hidden">
+                                 <select 
+                                     value={formData.category || "MENU"} 
+                                     onChange={(e) => setFormData({...formData, category: e.target.value})}
+                                     className="bg-transparent border-none focus:ring-0 text-sm w-full py-4 text-white cursor-pointer"
+                                 >
+                                     <option value="MENU" className="bg-background-dark">{t.catMenu}</option>
+                                     <option value="SUPPLEMENTS" className="bg-background-dark">{t.catSupplements}</option>
+                                     <option value="BASIL" className="bg-background-dark">{t.catBasil}</option>
+                                 </select>
+                             </div>
+                        </div>
+                    )}
+
                     {type === "LABS" && (
                         <InputField label={t.category} value={formData.category || ""} onChange={(v: any) => setFormData({...formData, category: v})} />
                     )}
@@ -671,6 +699,72 @@ function StatsSection({ lang }: { lang: string }) {
             <StatItem icon={<DollarSign size={20} />} label={t.revenue} val="45k" color="amber" />
             <StatItem icon={<Utensils size={20} />} label={t.meals} val="64" color="blue" />
             <StatItem icon={<FlaskConical size={20} />} label={t.labs} val="28" color="purple" />
+        </div>
+    );
+}
+
+function CategorySettingsSection({ lang, user }: { lang: "ar" | "en", user: UserProfile }) {
+    const [settings, setSettings] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const categories = [
+        { id: "MENU", ar: "قسم المنيو", en: "Dining Menu" },
+        { id: "SUPPLEMENTS", ar: "قسم المكملات الغذائية", en: "Supplements" },
+        { id: "BASIL", ar: "قسم منتجات الريحان", en: "Basil Products" }
+    ];
+
+    useEffect(() => {
+        const fetchSettings = async () => {
+            const snap = await getDocs(collection(db, "category_settings"));
+            setSettings(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+            setLoading(false);
+        };
+        fetchSettings();
+    }, []);
+
+    const updateImage = async (catId: string, file: File) => {
+        try {
+            const url = await uploadImage(file);
+            await setDoc(doc(db, "category_settings", catId), { image: url }, { merge: true });
+            const snap = await getDocs(collection(db, "category_settings"));
+            setSettings(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    return (
+        <div className="space-y-4 mb-8">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] px-2 text-white/30">
+                {lang === "ar" ? "صور الأقسام الرئيسية في المتجر" : "Main Category Images"}
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {categories.map(cat => {
+                    const setting = settings.find(s => s.id === cat.id);
+                    return (
+                        <div key={cat.id} className="glass rounded-3xl p-4 border border-white/5 space-y-3">
+                            <div className="flex justify-between items-center">
+                                <span className="text-[10px] font-black uppercase tracking-tighter text-primary">
+                                    {lang === "ar" ? cat.ar : cat.en}
+                                </span>
+                            </div>
+                            <label className="block aspect-[16/9] rounded-2xl bg-white/5 border border-dashed border-white/10 relative overflow-hidden cursor-pointer group">
+                                <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && updateImage(cat.id, e.target.files[0])} />
+                                {setting?.image ? (
+                                    <img src={setting.image} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="" />
+                                ) : (
+                                    <div className="absolute inset-0 flex items-center justify-center text-white/10 uppercase font-black text-[10px]">
+                                        Upload Image
+                                    </div>
+                                )}
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <ImageIcon size={24} className="text-white" />
+                                </div>
+                            </label>
+                        </div>
+                    );
+                })}
+            </div>
         </div>
     );
 }

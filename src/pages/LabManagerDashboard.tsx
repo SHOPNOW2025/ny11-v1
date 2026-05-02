@@ -81,7 +81,12 @@ export default function LabManagerDashboard({ user, lang }: { user: UserProfile,
         <div className="primary-gradient p-6 rounded-3xl text-background-dark flex items-center justify-between shadow-xl shadow-primary/20">
             <div>
                 <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">{t.walletBalance}</p>
-                <p className="text-3xl font-black">{formatPrice(managerUser.walletBalance, managerUser)}</p>
+                <div className="flex items-center gap-3">
+                    <p className="text-3xl font-black">{formatPrice(managerUser.walletBalance, managerUser)}</p>
+                    <Link to="/profile" className="text-[10px] bg-background-dark text-white px-3 py-1.5 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-black/20">
+                        {lang === 'ar' ? "سحب" : "Withdraw"}
+                    </Link>
+                </div>
             </div>
             <div className="w-14 h-14 bg-background-dark/10 rounded-2xl flex items-center justify-center">
                 <FlaskConical size={28} />

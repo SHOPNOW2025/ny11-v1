@@ -1,11 +1,33 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { NavLink } from "react-router-dom";
-import { Home, Utensils, FlaskConical, MessageSquare, User, ShieldCheck, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { Home, Utensils, FlaskConical, MessageSquare, User, ShieldCheck, Sparkles, ChevronDown, ChevronUp, Wallet } from "lucide-react";
 import { UserRole } from "../types";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { db, auth } from "../lib/firebase";
 
-export default function BottomNav({ role, lang }: { role: UserRole, lang: "ar" | "en" }) {
+export default function BottomNav({ user, role, lang }: { user: any, role: UserRole, lang: "ar" | "en" }) {
   const [isVisible, setIsVisible] = useState(true);
+  const [unreadTotal, setUnreadTotal] = useState(0);
+
+  useEffect(() => {
+    if (!user) {
+        setUnreadTotal(0);
+        return;
+    }
+
+    const q = query(collection(db, "chats"), where("participants", "array-contains", user.uid));
+    const unsub = onSnapshot(q, (snap) => {
+        let total = 0;
+        snap.docs.forEach(doc => {
+            const data = doc.data();
+            total += (data.unreadCount?.[user.uid] || 0);
+        });
+        setUnreadTotal(total);
+    });
+
+    return () => unsub();
+  }, [user]);
 
   const t = {
     home: lang === "ar" ? "الرئيسية" : "Home",
@@ -39,10 +61,14 @@ export default function BottomNav({ role, lang }: { role: UserRole, lang: "ar" |
             <NavItem to="/menu" icon={<Utensils size={18} />} label={t.menu} />
             <NavItem to="/clinic" icon={<Sparkles size={18} />} label={t.clinic} />
             <NavItem to="/lab" icon={<FlaskConical size={18} />} label={t.lab} />
-            <NavItem to="/inbox" icon={<MessageSquare size={18} />} label={t.inbox} />
+            <NavItem to="/inbox" icon={<MessageSquare size={18} />} label={t.inbox} badge={unreadTotal} />
             
             {role === "ADMIN" && (
               <NavItem to="/admin" icon={<ShieldCheck size={18} />} label={t.admin} />
+            )}
+
+            {role === "ACCOUNTANT" && (
+              <NavItem to="/accountant" icon={<Wallet size={18} />} label={lang === "ar" ? "المحاسبة" : "Accounting"} />
             )}
             
             <NavItem to="/profile" icon={<User size={18} />} label={t.profile} />
@@ -53,7 +79,7 @@ export default function BottomNav({ role, lang }: { role: UserRole, lang: "ar" |
   );
 }
 
-function NavItem({ to, icon, label }: { to: string; icon: React.ReactNode; label: string }) {
+function NavItem({ to, icon, label, badge }: { to: string; icon: React.ReactNode; label: string, badge?: number }) {
   return (
     <NavLink
       to={to}
@@ -65,8 +91,13 @@ function NavItem({ to, icon, label }: { to: string; icon: React.ReactNode; label
     >
       {({ isActive }) => (
         <>
-          <div className={`transition-transform duration-300 ${isActive ? "scale-110 -translate-y-1" : "scale-100"}`}>
+          <div className={`transition-transform duration-300 ${isActive ? "scale-110 -translate-y-1" : "scale-100"} relative`}>
             {icon}
+            {badge !== undefined && badge > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-black shadow-[0_0_10px_rgba(239,68,68,0.5)]">
+                    {badge > 9 ? '+9' : badge}
+                </span>
+            )}
           </div>
           <span className={`text-[7px] font-black mt-1 tracking-tighter transition-all duration-300 ${isActive ? "opacity-100 translate-y-0" : "opacity-60 translate-y-1"} uppercase`}>{label}</span>
           {isActive && (

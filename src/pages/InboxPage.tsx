@@ -43,7 +43,9 @@ function ChatItem({ chat, user, lang, t, navigate }: any) {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             onClick={() => navigate(`/chat/${chat.id}`)}
-            className="glass rounded-[2rem] p-5 flex items-center gap-5 border-white/5 active:scale-95 transition-all cursor-pointer group"
+            className={`glass rounded-[2rem] p-5 flex items-center gap-5 border active:scale-95 transition-all cursor-pointer group ${
+                chat.unreadCount?.[user.uid] > 0 ? "border-primary/40 bg-primary/[0.03] shadow-[0_0_20px_rgba(139,198,63,0.05)]" : "border-white/5"
+            }`}
         >
             <div className="relative shrink-0">
                 <div className="w-16 h-16 rounded-2xl glass p-0.5 overflow-hidden">
@@ -66,17 +68,28 @@ function ChatItem({ chat, user, lang, t, navigate }: any) {
 
             <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-start mb-1">
-                    <h3 className="font-black text-sm tracking-tight text-[var(--text-main)] uppercase truncate pr-2">
+                    <h3 className={`text-sm tracking-tight text-[var(--text-main)] uppercase truncate pr-2 ${
+                         chat.unreadCount?.[user.uid] > 0 ? "font-black" : "font-bold opacity-80"
+                    }`}>
                         {otherParty.name}
                     </h3>
                     <span className="text-[8px] font-bold text-[var(--text-muted)] uppercase">
                         {new Date(chat.updatedAt).toLocaleDateString()}
                     </span>
                 </div>
-                <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-1">{otherParty.role}</p>
-                <p className="text-xs text-[var(--text-muted)] font-medium truncate opacity-60">
-                    {chat.lastMessage || t.startChatMsg}
-                </p>
+                <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-1 leading-none">{otherParty.role}</p>
+                <div className="flex items-center justify-between gap-2 overflow-hidden">
+                    <p className={`text-xs font-medium truncate italic ${
+                        chat.unreadCount?.[user.uid] > 0 ? "text-white opacity-100 font-bold" : "text-[var(--text-muted)] opacity-60"
+                    }`}>
+                        {chat.lastMessage || t.startChatMsg}
+                    </p>
+                    {chat.unreadCount?.[user.uid] > 0 && (
+                        <div className="bg-primary text-black text-[9px] font-black w-5 h-5 rounded-lg flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
+                            {chat.unreadCount[user.uid]}
+                        </div>
+                    )}
+                </div>
             </div>
 
             <ChevronLeft size={16} className={`text-white/10 group-hover:text-primary transition-colors transform ${lang === 'ar' ? 'translate-x-2' : '-translate-x-2'}`} />

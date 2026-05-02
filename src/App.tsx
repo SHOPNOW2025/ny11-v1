@@ -25,6 +25,7 @@ import OrdersPage from "./pages/OrdersPage";
 import PaymentMethodsPage from "./pages/PaymentMethodsPage";
 import SettingsPage from "./pages/SettingsPage";
 import InboxPage from "./pages/InboxPage";
+import AccountantDashboard from "./pages/AccountantDashboard";
 
 // Components
 import BottomNav from "./components/BottomNav";
@@ -140,10 +141,13 @@ export default function App() {
               {user?.role === "TRAINER" && (
                 <Route path="/trainer" element={<TrainerDashboard user={user} lang={lang} />} />
               )}
+              {user?.role === "ACCOUNTANT" && (
+                <Route path="/accountant" element={<AccountantDashboard user={user} lang={lang} />} />
+              )}
               
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
-            <BottomNav role={user?.role || "USER"} lang={lang} />
+            <BottomNav user={user} role={user?.role || "USER"} lang={lang} />
           </div>
         </div>
       </Router>

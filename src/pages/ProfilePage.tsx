@@ -3,7 +3,7 @@ import { UserProfile } from "../types";
 import { auth, db } from "../lib/firebase";
 import { signOut } from "firebase/auth";
 import { motion, AnimatePresence } from "motion/react";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, addDoc, collection, increment } from "firebase/firestore";
 import { 
     Wallet, 
     Settings, 
@@ -152,6 +152,11 @@ export default function ProfilePage({ user, lang }: { user: UserProfile, lang: "
           </section>
         )}
 
+        {/* Withdrawal Request Section for Experts */}
+        {(user.role === "TRAINER" || user.role === "LAB_MANAGER") && (
+          <WithdrawalSection user={user} lang={lang} />
+        )}
+
         {/* Dashboards based on role */}
         <section className="space-y-3">
             <h3 className="text-[10px] text-white/30 font-bold uppercase tracking-[0.2em] px-2">الإدارة والمهام</h3>
@@ -183,6 +188,189 @@ export default function ProfilePage({ user, lang }: { user: UserProfile, lang: "
       </main>
     </div>
   );
+}
+
+function WithdrawalSection({ user, lang }: { user: UserProfile, lang: "ar" | "en" }) {
+    const [showModal, setShowModal] = useState(false);
+    const [method, setMethod] = useState<"BANK" | "WALLET">("WALLET");
+    const [amount, setAmount] = useState("");
+    const [phone, setPhone] = useState("");
+    const [alias, setAlias] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    const t = {
+        title: lang === "ar" ? "طلب سحب رصيد" : "Request Withdrawal",
+        desc: lang === "ar" ? "اسحب أرباحك إلى حسابك البنكي أو محفظتك" : "Withdraw your earnings to your bank or wallet",
+        amount: lang === "ar" ? "المبلغ المراد سحبه" : "Amount to withdraw",
+        method: lang === "ar" ? "طريقة التحويل" : "Transfer Method",
+        bank: lang === "ar" ? "حساب بنكي" : "Bank Account",
+        wallet: lang === "ar" ? "محافظ أردنية" : "Jordanian Wallets",
+        phone: lang === "ar" ? "رقم الهاتف المرتبط" : "Linked Phone Number",
+        alias: lang === "ar" ? "الاسم المستعار / اسم المستلم" : "Alias / Recipient Name",
+        submit: lang === "ar" ? "إرسال الطلب" : "Submit Request",
+        insufficient: lang === "ar" ? "رصيد غير كافٍ" : "Insufficient balance",
+        success: lang === "ar" ? "تم إرسال الطلب بنجاح" : "Request sent successfully",
+        cancel: lang === "ar" ? "إلغاء" : "Cancel"
+    };
+
+    const handleSubmit = async () => {
+        if (!amount || parseFloat(amount) <= 0 || parseFloat(amount) > user.walletBalance) {
+            alert(t.insufficient);
+            return;
+        }
+        if (!phone || !alias) {
+            alert(lang === "ar" ? "يرجى ملء جميع الحقول" : "Please fill all fields");
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const withdrawalAmount = parseFloat(amount);
+            
+            // 1. Create request
+            await addDoc(collection(db, "withdrawal_requests"), {
+                userId: user.uid,
+                userName: getLocalizedString(user.name, lang),
+                userRole: user.role,
+                amount: withdrawalAmount,
+                method,
+                details: {
+                    phoneNumber: phone,
+                    alias: alias
+                },
+                status: "PENDING",
+                createdAt: Date.now()
+            });
+
+            // 2. Deduct from wallet balance
+            await updateDoc(doc(db, "users", user.uid), {
+                walletBalance: increment(-withdrawalAmount)
+            });
+
+            alert(t.success);
+            setShowModal(false);
+            setAmount("");
+            setPhone("");
+            setAlias("");
+        } catch (err) {
+            console.error(err);
+        }
+        setLoading(false);
+    };
+
+    return (
+        <>
+            <section className="glass rounded-3xl p-5 border border-white/5 space-y-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+                            <DollarSign size={20} />
+                        </div>
+                        <div>
+                            <h4 className="text-sm font-bold">{t.title}</h4>
+                            <p className="text-[10px] text-white/30">{t.desc}</p>
+                        </div>
+                    </div>
+                    <button 
+                        onClick={() => setShowModal(true)}
+                        className="bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase px-4 py-2 rounded-xl transition-all"
+                    >
+                        {lang === "ar" ? "طلب سحب" : "Withdraw"}
+                    </button>
+                </div>
+            </section>
+
+            <AnimatePresence>
+                {showModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="w-full max-w-sm glass rounded-[2.5rem] p-8 border border-white/10 space-y-6 shadow-2xl relative"
+                        >
+                            <div className="text-center space-y-1">
+                                <h3 className="text-xl font-black uppercase italic tracking-tighter text-primary">{t.title}</h3>
+                                <p className="text-[10px] text-white/40 uppercase tracking-widest">{t.desc}</p>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="glass rounded-2xl p-4 border border-white/5">
+                                    <label className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] mb-2 block px-1">{t.amount}</label>
+                                    <div className="flex items-center gap-2">
+                                        <input 
+                                            type="number" 
+                                            className="bg-transparent border-none focus:ring-0 text-xl font-black flex-1"
+                                            placeholder="0.00"
+                                            value={amount}
+                                            onChange={(e) => setAmount(e.target.value)}
+                                        />
+                                        <span className="text-xs font-black text-primary italic">JOD</span>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    <label className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] mb-2 block px-1">{t.method}</label>
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={() => setMethod("WALLET")}
+                                            className={`flex-1 py-3 rounded-xl text-[10px] font-bold uppercase transition-all ${method === "WALLET" ? "bg-primary text-black" : "glass text-white/40"}`}
+                                        >
+                                            {t.wallet}
+                                        </button>
+                                        <button 
+                                            onClick={() => setMethod("BANK")}
+                                            className={`flex-1 py-3 rounded-xl text-[10px] font-bold uppercase transition-all ${method === "BANK" ? "bg-primary text-black" : "glass text-white/40"}`}
+                                        >
+                                            {t.bank}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    <div className="glass rounded-2xl px-4 py-3 border border-white/5">
+                                        <input 
+                                            type="text"
+                                            placeholder={t.phone}
+                                            className="bg-transparent border-none focus:ring-0 text-xs w-full"
+                                            value={phone}
+                                            onChange={(e) => setPhone(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="glass rounded-2xl px-4 py-3 border border-white/5">
+                                        <input 
+                                            type="text"
+                                            placeholder={t.alias}
+                                            className="bg-transparent border-none focus:ring-0 text-xs w-full"
+                                            value={alias}
+                                            onChange={(e) => setAlias(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-3 pt-2">
+                                    <button 
+                                        disabled={loading}
+                                        onClick={() => setShowModal(false)}
+                                        className="flex-1 py-4 rounded-2xl glass text-[10px] font-black uppercase text-white/40 border-white/5"
+                                    >
+                                        {t.cancel}
+                                    </button>
+                                    <button 
+                                        disabled={loading}
+                                        onClick={handleSubmit}
+                                        className="flex-[2] py-4 rounded-2xl primary-gradient text-black font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 active:scale-95 transition-all flex items-center justify-center"
+                                    >
+                                        {loading ? <Loader2 size={16} className="animate-spin" /> : t.submit}
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+        </>
+    );
 }
 
 function DashboardLink({ to, icon, title, desc }: { to: string; icon: React.ReactNode; title: string; desc: string }) {

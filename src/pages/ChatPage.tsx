@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { collection, query, orderBy, onSnapshot, addDoc, doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, addDoc, doc, getDoc, updateDoc, serverTimestamp, writeBatch } from "firebase/firestore";
 import { db, auth } from "../lib/firebase";
 import { ChatMessage, ChatRoom, UserProfile, Expert } from "../types";
 import { formatPrice } from "../lib/currency";
 import { getLocalizedString } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
-import { Send, ChevronRight, MoreVertical, Paperclip, Bot, User, Trophy, FlaskConical, DollarSign, CreditCard } from "lucide-react";
+import { Send, ChevronRight, MoreVertical, Paperclip, Bot, User, Trophy, FlaskConical, DollarSign, CreditCard, Check, CheckCheck } from "lucide-react";
 import { getAiHealthAdvice } from "../services/aiAssistant";
 
 export default function ChatPage({ user, lang }: { user: UserProfile, lang: "ar" | "en" }) {
@@ -25,7 +25,7 @@ export default function ChatPage({ user, lang }: { user: UserProfile, lang: "ar"
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || !user) return;
     let unsubExpert: (() => void) | undefined;
 
     const unsubRoom = onSnapshot(doc(db, "chats", id), (snap) => {
@@ -33,6 +33,13 @@ export default function ChatPage({ user, lang }: { user: UserProfile, lang: "ar"
         const data = snap.data() as ChatRoom;
         setRoom({ id: snap.id, ...data });
         
+        // Reset unread count for current user
+        if (data.unreadCount?.[user.uid] && data.unreadCount[user.uid] > 0) {
+            updateDoc(doc(db, "chats", id), {
+                [`unreadCount.${user.uid}`]: 0
+            });
+        }
+
         if (data.type === "EXPERT" && data.expertId) {
           if (unsubExpert) unsubExpert();
           unsubExpert = onSnapshot(doc(db, "users", data.expertId), (eSnap) => {
@@ -46,7 +53,21 @@ export default function ChatPage({ user, lang }: { user: UserProfile, lang: "ar"
 
     const q = query(collection(db, "chats", id, "messages"), orderBy("timestamp", "asc"));
     const unsubMsg = onSnapshot(q, (snap) => {
-      setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() } as ChatMessage)));
+      const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() } as ChatMessage));
+      setMessages(msgs);
+      
+      // Mark unread messages as read
+      const batch = writeBatch(db);
+      let needsUpdate = false;
+      snap.docs.forEach(d => {
+          const m = d.data() as ChatMessage;
+          if (m.senderId !== user.uid && !m.read) {
+              batch.update(d.ref, { read: true, readAt: Date.now() });
+              needsUpdate = true;
+          }
+      });
+      if (needsUpdate) batch.commit();
+
       setTimeout(() => {
         scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
       }, 100);
@@ -57,7 +78,7 @@ export default function ChatPage({ user, lang }: { user: UserProfile, lang: "ar"
       unsubMsg();
       if (unsubExpert) unsubExpert();
     };
-  }, [id]);
+  }, [id, user.uid]);
 
   const t = {
     loading: lang === "ar" ? "جارِ التحميل..." : "Loading...",
@@ -93,14 +114,24 @@ export default function ChatPage({ user, lang }: { user: UserProfile, lang: "ar"
       senderId: user.uid,
       text: msgText,
       timestamp: Date.now(),
-      type: "TEXT" as const
+      type: "TEXT" as const,
+      read: false
     };
 
+    const recipientId = room.participants.find(p => p !== user.uid);
+
     await addDoc(collection(db, "chats", id, "messages"), msgData);
-    await updateDoc(doc(db, "chats", id), {
+    
+    const roomUpdate: any = {
         lastMessage: msgText,
         updatedAt: Date.now()
-    });
+    };
+
+    if (recipientId) {
+        roomUpdate[`unreadCount.${recipientId}`] = (room.unreadCount?.[recipientId] || 0) + 1;
+    }
+
+    await updateDoc(doc(db, "chats", id), roomUpdate);
 
     if (room.type === "AI") {
         setIsAiLoading(true);
@@ -263,9 +294,20 @@ export default function ChatPage({ user, lang }: { user: UserProfile, lang: "ar"
                         )}
                     </div>
                 ) : m.text}
-                <p className={`text-[8px] mt-1 opacity-40 ${m.senderId === user.uid ? "text-black" : "text-white"}`}>
-                    {new Date(m.timestamp).toLocaleTimeString(lang === 'ar' ? "ar-SA" : "en-US", { hour: "2-digit", minute: "2-digit" })}
-                </p>
+                <div className="flex items-center justify-end gap-1 mt-1">
+                    <p className={`text-[8px] opacity-40 ${m.senderId === user.uid ? "text-black" : "text-white"}`}>
+                        {new Date(m.timestamp).toLocaleTimeString(lang === 'ar' ? "ar-SA" : "en-US", { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                    {m.senderId === user.uid && (
+                        <div className="flex items-center">
+                            {m.read ? (
+                                <CheckCheck size={10} className="text-blue-500" />
+                            ) : (
+                                <Check size={10} className="text-black/30" />
+                            )}
+                        </div>
+                    )}
+                </div>
               </div>
             </motion.div>
           ))}

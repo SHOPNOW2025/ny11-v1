@@ -1,64 +1,96 @@
 import { useState, useEffect } from "react";
-import { collection, getDocs, addDoc } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { MenuItem, UserProfile } from "../types";
+import { MenuItem, UserProfile, MenuCategory } from "../types";
 import { formatPrice } from "../lib/currency";
-import { motion } from "motion/react";
-import { Search, Filter, ShoppingBag, Info, Activity, Zap, Plus, ArrowRight } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { Search, Filter, ShoppingBag, Info, Activity, Zap, Plus, ArrowRight, ChevronLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 
 export default function MenuPage({ user, lang }: { user?: UserProfile | null, lang: "ar" | "en" }) {
   const [items, setItems] = useState<MenuItem[]>([]);
+  const [categorySettings, setCategorySettings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("ALL");
+  const [activeCategory, setActiveCategory] = useState<MenuCategory | null>(null);
   const { addToCart } = useCart();
 
   useEffect(() => {
-    const fetchItems = async () => {
-      const snap = await getDocs(collection(db, "menu"));
-      setItems(snap.docs.map(d => ({ id: d.id, ...d.data() } as MenuItem)));
+    const fetchData = async () => {
+      const menuSnap = await getDocs(collection(db, "menu"));
+      const settingsSnap = await getDocs(collection(db, "category_settings"));
+      
+      setItems(menuSnap.docs.map(d => ({ id: d.id, ...d.data() } as MenuItem)));
+      setCategorySettings(settingsSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       setLoading(false);
     };
-    fetchItems();
+    fetchData();
   }, []);
 
   const categories = [
-    { id: "ALL", ar: "الكل", en: "ALL" },
-    { id: "سلطات", ar: "سلطات", en: "SALADS" },
-    { id: "وجبات رئيسية", ar: "وجبات رئيسية", en: "MEALS" },
-    { id: "فطور", ar: "فطور", en: "BREAKFAST" },
-    { id: "مشروبات", ar: "مشروبات", en: "DRINKS" }
+    { id: "MENU", ar: "قسم المنيو", en: "Dining Menu", icon: <Zap size={20} /> },
+    { id: "SUPPLEMENTS", ar: "قسم المكملات الغذائية", en: "Supplements", icon: <Plus size={20} /> },
+    { id: "BASIL", ar: "قسم منتجات الريحان", en: "Basil Products", icon: <Activity size={20} /> }
   ];
 
   const filtered = items.filter(item => 
-    (selectedCategory === "ALL" || item.category === selectedCategory) &&
+    (!activeCategory || item.category === activeCategory) &&
     ((item.name?.[lang] || "").includes(search) || (item.description?.[lang] && item.description[lang].includes(search)))
   );
 
   const t = {
-    gastronomy: lang === "ar" ? "فن الطهو" : "GASTRONOMY",
-    excellence: lang === "ar" ? "التميز الغذائي" : "EXCELLENCE",
-    dietary: lang === "ar" ? "نظام" : "DIETARY",
-    findFuel: lang === "ar" ? "ابحث عن طاقتك..." : "Find your fuel...",
-    orderNow: lang === "ar" ? "اطلب الآن" : "Order Now",
+    storeName: lang === "ar" ? "NY11 ستور" : "NY11 STORE",
+    excellence: lang === "ar" ? "التميز الصحي" : "HEALTHY EXCELLENCE",
+    findFuel: lang === "ar" ? "ابحث عن منتج..." : "Search products...",
+    orderNow: lang === "ar" ? "إضافة للسلة" : "Add to Cart",
     noMatch: lang === "ar" ? "لا توجد نتائج" : "No Match Found",
     protein: lang === "ar" ? "بروتين" : "Protein",
     carbs: lang === "ar" ? "كارب" : "Carbs",
-    fats: lang === "ar" ? "دهون" : "Fats"
+    fats: lang === "ar" ? "دهون" : "Fats",
+    back: lang === "ar" ? "رجوع" : "Back"
   };
 
   return (
     <div className="flex flex-col flex-1 pb-40 overflow-x-hidden">
       <header className="p-6 pt-10 space-y-8">
-        <div className="space-y-1">
-          <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">{t.gastronomy}</h2>
-          <h1 className="text-4xl font-black italic tracking-tighter uppercase whitespace-pre-line text-[var(--text-main)]">
-            {t.dietary}<br/>
-            <span className="text-primary not-italic">{t.excellence}</span>
-          </h1>
-        </div>
+        <AnimatePresence mode="wait">
+          {!activeCategory ? (
+            <motion.div 
+              key="main-header"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="space-y-1"
+            >
+              <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">{t.excellence}</h2>
+              <h1 className="text-4xl font-black italic tracking-tighter uppercase whitespace-pre-line text-[var(--text-main)]">
+                {t.storeName}
+              </h1>
+            </motion.div>
+          ) : (
+            <motion.div 
+              key="category-header"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="flex items-center gap-4"
+            >
+              <button 
+                onClick={() => setActiveCategory(null)}
+                className="w-12 h-12 glass rounded-2xl flex items-center justify-center text-primary"
+              >
+                <ChevronLeft size={24} className={lang === 'ar' ? 'rotate-180' : ''} />
+              </button>
+              <div className="space-y-0.5">
+                <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">{t.storeName}</h2>
+                <h1 className="text-2xl font-black italic tracking-tighter uppercase text-[var(--text-main)]">
+                  {categories.find(c => c.id === activeCategory)?.[lang]}
+                </h1>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         
         <div className="flex gap-3">
           <div className="flex-1 glass rounded-2xl px-5 py-4 flex items-center gap-4 border-white/5">
@@ -71,87 +103,110 @@ export default function MenuPage({ user, lang }: { user?: UserProfile | null, la
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <button className="w-14 h-14 glass rounded-2xl flex items-center justify-center text-[var(--text-muted)] hover:text-primary transition-colors border-white/5">
-            <Filter size={18} />
-          </button>
-        </div>
-
-        <div className="flex gap-4 overflow-x-auto no-scrollbar -mx-2 px-2">
-          {categories.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
-              className={`px-8 py-3 rounded-2xl text-[10px] font-black tracking-widest whitespace-nowrap transition-all border ${
-                selectedCategory === cat.id 
-                  ? "bg-primary text-black border-primary shadow-lg shadow-primary/20" 
-                  : "glass text-[var(--text-muted)] border-white/5"
-              }`}
-            >
-              {lang === "ar" ? cat.ar : cat.en}
-            </button>
-          ))}
         </div>
       </header>
 
-      <main className="px-6 grid gap-8">
-        {loading ? (
-          [1, 2, 3].map(i => <div key={i} className="h-64 glass rounded-[3rem] animate-pulse" />)
-        ) : filtered.length > 0 ? (
-          filtered.map((item, idx) => (
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: idx * 0.05 }}
-              key={item.id}
-              className="group"
-            >
-              <div className="glass rounded-[3.5rem] overflow-hidden border-white/[0.03] shadow-2xl relative">
-                <Link to={`/menu/${item.id}`} className="block relative h-64 overflow-hidden">
-                  <img src={item.image} className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-1000" alt={item.name?.[lang]} />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+      <main className="px-6 space-y-8">
+        {!activeCategory ? (
+          <div className="grid gap-6">
+            {categories.map((cat, idx) => {
+              const setting = categorySettings.find(s => s.id === cat.id);
+              return (
+                <motion.button
+                  key={cat.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.1 }}
+                  onClick={() => setActiveCategory(cat.id as MenuCategory)}
+                  className="group relative h-48 w-full rounded-[2.5rem] overflow-hidden glass border border-white/10 text-left"
+                >
+                  <img 
+                    src={setting?.image || "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=800"} 
+                    className="absolute inset-0 w-full h-full object-cover grayscale-[0.3] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 opacity-60" 
+                    alt="" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
                   
-                  <div className="absolute top-6 left-6 glass px-5 py-2 rounded-2xl flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                    <span className="text-[10px] font-black tracking-widest uppercase">{item.calories} KCAL</span>
+                  <div className="relative h-full p-8 flex flex-col justify-between">
+                    <div className="w-12 h-12 rounded-2xl bg-primary/20 backdrop-blur-xl flex items-center justify-center text-primary group-hover:scale-110 group-hover:bg-primary transition-all group-hover:text-black">
+                      {cat.icon}
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Section</p>
+                      <h3 className="text-2xl font-black italic tracking-tighter uppercase text-white shadow-sm">
+                        {cat[lang]}
+                      </h3>
+                    </div>
                   </div>
-                </Link>
-
-                <div className="p-8 space-y-6">
-                  <div className="flex justify-between items-start">
-                    <Link to={`/menu/${item.id}`} className="flex-1 space-y-1">
-                      <span className="text-[10px] text-primary font-black uppercase tracking-[0.2em]">{item.category}</span>
-                      <h3 className="text-xl font-black tracking-tighter uppercase mb-1 text-[var(--text-main)]">{item.name?.[lang]}</h3>
-                      <p className="text-xs text-[var(--text-muted)] font-medium leading-relaxed line-clamp-1">{item.description?.[lang]}</p>
-                    </Link>
+                  
+                  <div className={`absolute ${lang === 'ar' ? 'left-8' : 'right-8'} bottom-8 p-3 glass rounded-full opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0`}>
+                    <ArrowRight size={20} className={lang === 'ar' ? 'rotate-180' : ''} />
                   </div>
-
-                  <div className="grid grid-cols-3 gap-4 py-4 border-y border-white/[0.03]">
-                    <MacroItem label={t.protein} value={item.protein} unit="g" />
-                    <MacroItem label={t.carbs} value={item.carbs} unit="g" />
-                    <MacroItem label={t.fats} value={item.fats} unit="g" />
-                  </div>
-
-                  <div className="flex gap-4 pt-2">
-                    <button 
-                      onClick={() => addToCart(item, "MENU")}
-                      className="flex-1 primary-gradient text-background-dark font-black py-5 rounded-[2rem] flex items-center justify-center gap-3 text-sm shadow-xl shadow-primary/20 active:scale-95 transition-all uppercase tracking-widest"
-                    >
-                      <ShoppingBag size={18} />
-                      {t.orderNow}
-                    </button>
-                    <Link to={`/menu/${item.id}`} className="w-16 h-16 glass rounded-[2rem] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">
-                      <ArrowRight size={20} />
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          ))
+                </motion.button>
+              );
+            })}
+          </div>
         ) : (
-          <div className="text-center py-40">
-             <Info className="mx-auto text-white/10 mb-4" size={48} />
-             <p className="text-white/20 font-black tracking-widest text-[10px] uppercase">No Match Found</p>
+          <div className="grid gap-8">
+            {loading ? (
+              [1, 2, 3].map(i => <div key={i} className="h-64 glass rounded-[3rem] animate-pulse" />)
+            ) : filtered.length > 0 ? (
+              filtered.map((item, idx) => (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: idx * 0.05 }}
+                  key={item.id}
+                  className="group"
+                >
+                  <div className="glass rounded-[3rem] overflow-hidden border-white/[0.03] shadow-2xl relative">
+                    <Link to={`/menu/${item.id}`} className="block relative h-56 overflow-hidden">
+                      <img src={item.image} className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-1000" alt={item.name?.[lang]} />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                      
+                      <div className="absolute top-6 left-6 glass px-5 py-2 rounded-2xl flex items-center gap-2">
+                        <span className="text-[10px] font-black tracking-widest uppercase text-primary">
+                          {formatPrice(item.price, user, item.currency)}
+                        </span>
+                      </div>
+                    </Link>
+
+                    <div className="p-7 space-y-6">
+                       <div className="space-y-1">
+                          <h3 className="text-xl font-black tracking-tighter uppercase text-[var(--text-main)]">{item.name?.[lang]}</h3>
+                          <p className="text-xs text-[var(--text-muted)] font-medium leading-relaxed line-clamp-2">{item.description?.[lang]}</p>
+                       </div>
+
+                       {item.category === "MENU" && (
+                         <div className="grid grid-cols-3 gap-4 py-4 border-y border-white/[0.03]">
+                            <MacroItem label={t.protein} value={item.protein} unit="g" />
+                            <MacroItem label={t.carbs} value={item.carbs} unit="g" />
+                            <MacroItem label={t.fats} value={item.fats} unit="g" />
+                         </div>
+                       )}
+
+                       <div className="flex gap-3 pt-2">
+                          <button 
+                            onClick={() => addToCart(item, "MENU")}
+                            className="flex-1 primary-gradient text-background-dark font-black py-4 rounded-2xl flex items-center justify-center gap-3 text-xs shadow-xl shadow-primary/20 active:scale-95 transition-all uppercase tracking-widest"
+                          >
+                            <ShoppingBag size={16} />
+                            {t.orderNow}
+                          </button>
+                          <Link to={`/menu/${item.id}`} className="w-12 h-12 glass rounded-2xl flex items-center justify-center text-[var(--text-muted)] hover:text-primary transition-colors">
+                            <ArrowRight size={18} className={lang === 'ar' ? 'rotate-180' : ''} />
+                          </Link>
+                       </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))
+            ) : (
+              <div className="text-center py-24 glass rounded-[3rem] border border-dashed border-white/10">
+                 <Info className="mx-auto text-white/10 mb-4" size={48} />
+                 <p className="text-white/20 font-black tracking-widest text-[10px] uppercase">{t.noMatch}</p>
+              </div>
+            )}
           </div>
         )}
       </main>

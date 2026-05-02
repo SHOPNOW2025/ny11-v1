@@ -102,7 +102,12 @@ export default function TrainerDashboard({ user, lang }: { user: UserProfile, la
         <div className="primary-gradient p-6 rounded-3xl text-background-dark flex items-center justify-between shadow-xl shadow-primary/20">
             <div>
                 <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">{t.totalBalance}</p>
-                <p className="text-3xl font-black">{formatPrice(trainerUser.walletBalance, trainerUser)}</p>
+                <div className="flex items-center gap-3">
+                    <p className="text-3xl font-black">{formatPrice(trainerUser.walletBalance, trainerUser)}</p>
+                    <Link to="/profile" className="text-[10px] bg-background-dark text-white px-3 py-1.5 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-black/20">
+                        {lang === 'ar' ? "سحب" : "Withdraw"}
+                    </Link>
+                </div>
             </div>
             <div className="w-14 h-14 bg-background-dark/10 rounded-2xl flex items-center justify-center">
                 <Trophy size={28} />
