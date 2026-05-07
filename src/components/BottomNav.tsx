@@ -31,7 +31,7 @@ export default function BottomNav({ user, role, lang }: { user: any, role: UserR
 
   const t = {
     home: lang === "ar" ? "الرئيسية" : "Home",
-    menu: lang === "ar" ? "المنيو" : "Menu",
+    menu: lang === "ar" ? "المتجر" : "Store",
     clinic: lang === "ar" ? "المدربون" : "Clinic",
     lab: lang === "ar" ? "المختبر" : "Lab",
     inbox: lang === "ar" ? "الرسائل" : "Inbox",

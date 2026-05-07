@@ -28,7 +28,7 @@ export default function AdminDashboard({ user, lang }: { user: UserProfile, lang
     dashboardTitle: lang === "ar" ? "لوحة التحكم" : "Admin Dashboard",
     tabDashboard: lang === "ar" ? "الرئيسية" : "Dashboard",
     tabUsers: lang === "ar" ? "الحسابات" : "Users",
-    tabMenu: lang === "ar" ? "المتجر والمنيو" : "Store & Menu",
+    tabMenu: lang === "ar" ? "المتجر" : "Store",
     tabLabs: lang === "ar" ? "المختبر" : "Lab Services",
     tabContent: lang === "ar" ? "النصائح والإعلانات" : "Content & Ads",
     tabKnowledge: lang === "ar" ? "تدريب المساعد" : "AI Training",

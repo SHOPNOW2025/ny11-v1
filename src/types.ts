@@ -40,7 +40,10 @@ export interface UserProfile {
   bio?: string;
   bio_ar?: string;
   bio_en?: string;
+  bio_en_en?: string;
   online?: boolean;
+  savedGifs?: string[];
+  blockedUsers?: string[];
 }
 
 export interface KnowledgeBaseItem {
@@ -103,9 +106,12 @@ export interface Expert {
 export interface ChatMessage {
   id: string;
   senderId: string;
-  text: string;
+  text?: string;
   timestamp: number;
-  type: "TEXT" | "QUOTE";
+  type: "TEXT" | "QUOTE" | "IMAGE" | "GIF" | "VIDEO";
+  imageUrl?: string;
+  gifUrl?: string;
+  videoUrl?: string;
   quoteAmount?: number;
   read?: boolean;
   readAt?: number;
@@ -119,6 +125,8 @@ export interface ChatRoom {
   type: "EXPERT" | "AI";
   expertId?: string;
   unreadCount?: { [userId: string]: number };
+  pinnedBy?: string[];
+  blockedBy?: string[];
 }
 
 export interface PromoCode {

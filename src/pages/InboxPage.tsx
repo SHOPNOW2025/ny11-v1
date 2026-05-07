@@ -4,7 +4,7 @@ import { db } from "../lib/firebase";
 import { UserProfile, ChatRoom } from "../types";
 import { getLocalizedString } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
-import { MessageSquare, ChevronLeft, Bot, Search, Brain, FlaskConical, User, Trash2, Plus } from "lucide-react";
+import { MessageSquare, ChevronLeft, Bot, Search, Brain, FlaskConical, User, Trash2, Plus, Pin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 function ChatItem({ chat, user, lang, t, navigate }: any) {
@@ -48,7 +48,7 @@ function ChatItem({ chat, user, lang, t, navigate }: any) {
             }`}
         >
             <div className="relative shrink-0">
-                <div className="w-16 h-16 rounded-2xl glass p-0.5 overflow-hidden">
+                <div className="w-16 h-16 rounded-2xl glass p-0.5 overflow-hidden relative">
                     {chat.type === "AI" ? (
                         <div className="w-full h-full primary-gradient flex items-center justify-center text-background-dark">
                             <Brain size={32} />
@@ -59,6 +59,11 @@ function ChatItem({ chat, user, lang, t, navigate }: any) {
                             className="w-full h-full object-cover rounded-[14px]" 
                             alt="" 
                         />
+                    )}
+                    {chat.pinnedBy?.includes(user.uid) && (
+                        <div className="absolute top-1 right-1 bg-primary text-black p-1 rounded-md shadow-lg">
+                            <Pin size={10} className="fill-black" />
+                        </div>
                     )}
                 </div>
                 {chat.type !== "AI" && (
@@ -136,7 +141,12 @@ export default function InboxPage({ user, lang }: { user: UserProfile, lang: "ar
           ...d.data()
       }));
       
-      chatList.sort((a: any, b: any) => (b.updatedAt || 0) - (a.updatedAt || 0));
+      chatList.sort((a: any, b: any) => {
+        const aPinned = a.pinnedBy?.includes(user.uid) ? 1 : 0;
+        const bPinned = b.pinnedBy?.includes(user.uid) ? 1 : 0;
+        if (aPinned !== bPinned) return bPinned - aPinned;
+        return (b.updatedAt || 0) - (a.updatedAt || 0);
+      });
       setChats(chatList);
       setLoading(false);
     }, (err) => {

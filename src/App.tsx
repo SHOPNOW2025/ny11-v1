@@ -129,7 +129,7 @@ export default function App() {
               <Route path="/clinic" element={user ? <ClinicPage user={user} lang={lang} /> : <Navigate to="/auth" />} />
               <Route path="/plan" element={user ? <PlanPage user={user} lang={lang} /> : <Navigate to="/auth" />} />
               <Route path="/chat/:id" element={user ? <ChatPage user={user} lang={lang} /> : <Navigate to="/auth" />} />
-              <Route path="/profile" element={user ? <ProfilePage user={user} lang={lang} /> : <Navigate to="/auth" />} />
+              <Route path="/profile/:uid?" element={user ? <ProfilePage user={user} lang={lang} /> : <Navigate to="/auth" />} />
               
               {/* Role Specific Protected Routes */}
               {user?.role === "ADMIN" && (

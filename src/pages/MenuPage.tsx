@@ -40,7 +40,7 @@ export default function MenuPage({ user, lang }: { user?: UserProfile | null, la
   );
 
   const t = {
-    storeName: lang === "ar" ? "NY11 ستور" : "NY11 STORE",
+    storeName: lang === "ar" ? "متجر NY11" : "NY11 STORE",
     excellence: lang === "ar" ? "التميز الصحي" : "HEALTHY EXCELLENCE",
     findFuel: lang === "ar" ? "ابحث عن منتج..." : "Search products...",
     orderNow: lang === "ar" ? "إضافة للسلة" : "Add to Cart",
@@ -48,7 +48,9 @@ export default function MenuPage({ user, lang }: { user?: UserProfile | null, la
     protein: lang === "ar" ? "بروتين" : "Protein",
     carbs: lang === "ar" ? "كارب" : "Carbs",
     fats: lang === "ar" ? "دهون" : "Fats",
-    back: lang === "ar" ? "رجوع" : "Back"
+    back: lang === "ar" ? "رجوع" : "Back",
+    announcement: lang === "ar" ? "🚚 توصيل مجاني للطلبات فوق 50 دينار! تسوق الآن" : "🚚 Free shipping on orders over 50 JOD! Shop Now",
+    explore: lang === "ar" ? "اكتشف الأقسام" : "Explore Sections"
   };
 
   return (
@@ -91,7 +93,49 @@ export default function MenuPage({ user, lang }: { user?: UserProfile | null, la
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Store Announcement Section */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative overflow-hidden group"
+        >
+          <div className="absolute inset-0 bg-primary/20 blur-xl opacity-50 group-hover:opacity-100 transition-opacity" />
+          <div className="relative glass border border-primary/20 rounded-2xl p-4 flex items-center gap-4 overflow-hidden">
+             <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary shrink-0 animate-pulse">
+                <Zap size={20} />
+             </div>
+             <div className="flex-1 min-w-0 pr-4">
+                <p className="text-[10px] font-black uppercase text-primary/60 tracking-wider mb-0.5">Announcement</p>
+                <p className="text-xs font-bold text-white/90 truncate italic">{t.announcement}</p>
+             </div>
+             <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black/20 to-transparent pointer-events-none" />
+          </div>
+        </motion.div>
         
+        {/* Quick Categories Navigation */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between px-1">
+             <h3 className="text-[10px] font-black uppercase text-white/30 tracking-[0.3em]">{t.explore}</h3>
+          </div>
+          <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 mask-linear-right">
+             {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id as MenuCategory)}
+                  className={`flex items-center gap-3 px-6 py-4 rounded-2xl border transition-all shrink-0 font-black text-[10px] uppercase tracking-widest ${
+                    activeCategory === cat.id 
+                    ? "bg-primary border-primary text-black shadow-lg shadow-primary/20 scale-105" 
+                    : "glass border-white/5 text-white/40 hover:text-white"
+                  }`}
+                >
+                  <span className={activeCategory === cat.id ? "text-black" : "text-primary"}>{cat.icon}</span>
+                  {cat[lang]}
+                </button>
+             ))}
+          </div>
+        </div>
+
         <div className="flex gap-3">
           <div className="flex-1 glass rounded-2xl px-5 py-4 flex items-center gap-4 border-white/5">
             <Search size={18} className="text-[var(--text-muted)]" />
