@@ -26,6 +26,7 @@ import PaymentMethodsPage from "./pages/PaymentMethodsPage";
 import SettingsPage from "./pages/SettingsPage";
 import InboxPage from "./pages/InboxPage";
 import AccountantDashboard from "./pages/AccountantDashboard";
+import QrPage from "./pages/QrPage";
 
 // Components
 import BottomNav from "./components/BottomNav";
@@ -39,6 +40,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [isDark, setIsDark] = useState(true);
   const [lang, setLang] = useState<"ar" | "en">("ar");
+  const isQrPage = window.location.pathname === "/QrCode";
 
   useEffect(() => {
     const savedLang = localStorage.getItem("lang") as "ar" | "en" | null;
@@ -107,49 +109,54 @@ export default function App() {
   return (
     <CartProvider>
       <Router>
-        <div className="min-h-screen font-sans selection:bg-primary/30 text-[var(--text-main)]" dir={lang === "ar" ? "rtl" : "ltr"}>
-          <div className="max-w-md md:max-w-lg lg:max-w-xl mx-auto relative min-h-screen flex flex-col shadow-2xl bg-[var(--bg-main)] transition-all border-x border-[var(--border-muted)]">
-            <LanguageToggle lang={lang} toggle={toggleLang} />
-            <AIChatButton user={user} />
-            <CartIcon />
-            <Routes>
-              <Route path="/" element={<HomePage user={user} lang={lang} />} />
-              <Route path="/menu" element={<MenuPage user={user} lang={lang} />} />
-              <Route path="/menu/:id" element={<MenuItemPage user={user} lang={lang} />} />
-              <Route path="/lab" element={<LabPage user={user} lang={lang} />} />
-              <Route path="/lab/:id" element={<LabTestPage user={user} lang={lang} />} />
-              <Route path="/cart" element={<CartPage user={user} lang={lang} />} />
-              <Route path="/inbox" element={user ? <InboxPage user={user} lang={lang} /> : <Navigate to="/auth" />} />
-              <Route path="/orders" element={user ? <OrdersPage user={user} lang={lang} /> : <Navigate to="/auth" />} />
-              <Route path="/payment" element={user ? <PaymentPage user={user} lang={lang} /> : <Navigate to="/auth" />} />
-              <Route path="/payment-methods" element={user ? <PaymentMethodsPage user={user} lang={lang} /> : <Navigate to="/auth" />} />
-              <Route path="/settings" element={user ? <SettingsPage user={user} lang={lang} /> : <Navigate to="/auth" />} />
-              <Route path="/auth" element={<AuthPage lang={lang} />} />
-              
-              <Route path="/clinic" element={user ? <ClinicPage user={user} lang={lang} /> : <Navigate to="/auth" />} />
-              <Route path="/plan" element={user ? <PlanPage user={user} lang={lang} /> : <Navigate to="/auth" />} />
-              <Route path="/chat/:id" element={user ? <ChatPage user={user} lang={lang} /> : <Navigate to="/auth" />} />
-              <Route path="/profile/:uid?" element={user ? <ProfilePage user={user} lang={lang} /> : <Navigate to="/auth" />} />
-              
-              {/* Role Specific Protected Routes */}
-              {user?.role === "ADMIN" && (
-                <Route path="/admin" element={<AdminDashboard user={user} lang={lang} />} />
-              )}
-              {user?.role === "LAB_MANAGER" && (
-                <Route path="/lab-manager" element={<LabManagerDashboard user={user} lang={lang} />} />
-              )}
-              {user?.role === "TRAINER" && (
-                <Route path="/trainer" element={<TrainerDashboard user={user} lang={lang} />} />
-              )}
-              {user?.role === "ACCOUNTANT" && (
-                <Route path="/accountant" element={<AccountantDashboard user={user} lang={lang} />} />
-              )}
-              
-              <Route path="*" element={<Navigate to="/" />} />
-            </Routes>
-            <BottomNav user={user} role={user?.role || "USER"} lang={lang} />
-          </div>
-        </div>
+        <Routes>
+          <Route path="/QrCode" element={<QrPage lang={lang} />} />
+          <Route path="*" element={
+            <div className="min-h-screen font-sans selection:bg-primary/30 text-[var(--text-main)]" dir={lang === "ar" ? "rtl" : "ltr"}>
+              <div className="max-w-md md:max-w-lg lg:max-w-xl mx-auto relative min-h-screen flex flex-col shadow-2xl bg-[var(--bg-main)] transition-all border-x border-[var(--border-muted)]">
+                <LanguageToggle lang={lang} toggle={toggleLang} />
+                <AIChatButton user={user} />
+                <CartIcon />
+                <Routes>
+                  <Route path="/" element={<HomePage user={user} lang={lang} />} />
+                  <Route path="/menu" element={<MenuPage user={user} lang={lang} />} />
+                  <Route path="/menu/:id" element={<MenuItemPage user={user} lang={lang} />} />
+                  <Route path="/lab" element={<LabPage user={user} lang={lang} />} />
+                  <Route path="/lab/:id" element={<LabTestPage user={user} lang={lang} />} />
+                  <Route path="/cart" element={<CartPage user={user} lang={lang} />} />
+                  <Route path="/inbox" element={user ? <InboxPage user={user} lang={lang} /> : <Navigate to="/auth" />} />
+                  <Route path="/orders" element={user ? <OrdersPage user={user} lang={lang} /> : <Navigate to="/auth" />} />
+                  <Route path="/payment" element={user ? <PaymentPage user={user} lang={lang} /> : <Navigate to="/auth" />} />
+                  <Route path="/payment-methods" element={user ? <PaymentMethodsPage user={user} lang={lang} /> : <Navigate to="/auth" />} />
+                  <Route path="/settings" element={user ? <SettingsPage user={user} lang={lang} /> : <Navigate to="/auth" />} />
+                  <Route path="/auth" element={<AuthPage lang={lang} />} />
+                  
+                  <Route path="/clinic" element={user ? <ClinicPage user={user} lang={lang} /> : <Navigate to="/auth" />} />
+                  <Route path="/plan" element={user ? <PlanPage user={user} lang={lang} /> : <Navigate to="/auth" />} />
+                  <Route path="/chat/:id" element={user ? <ChatPage user={user} lang={lang} /> : <Navigate to="/auth" />} />
+                  <Route path="/profile/:uid?" element={user ? <ProfilePage user={user} lang={lang} /> : <Navigate to="/auth" />} />
+                  
+                  {/* Role Specific Protected Routes */}
+                  {user?.role === "ADMIN" && (
+                    <Route path="/admin" element={<AdminDashboard user={user} lang={lang} />} />
+                  )}
+                  {user?.role === "LAB_MANAGER" && (
+                    <Route path="/lab-manager" element={<LabManagerDashboard user={user} lang={lang} />} />
+                  )}
+                  {user?.role === "TRAINER" && (
+                    <Route path="/trainer" element={<TrainerDashboard user={user} lang={lang} />} />
+                  )}
+                  {user?.role === "ACCOUNTANT" && (
+                    <Route path="/accountant" element={<AccountantDashboard user={user} lang={lang} />} />
+                  )}
+                  
+                  <Route path="*" element={<Navigate to="/" />} />
+                </Routes>
+                <BottomNav user={user} role={user?.role || "USER"} lang={lang} />
+              </div>
+            </div>
+          } />
+        </Routes>
       </Router>
     </CartProvider>
   );
