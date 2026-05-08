@@ -111,7 +111,7 @@ export default function App() {
       <Router>
         <Routes>
           <Route path="/QrCode" element={<QrPage lang={lang} />} />
-          <Route path="*" element={
+          <Route path="/*" element={
             <div className="min-h-screen font-sans selection:bg-primary/30 text-[var(--text-main)]" dir={lang === "ar" ? "rtl" : "ltr"}>
               <div className="max-w-md md:max-w-lg lg:max-w-xl mx-auto relative min-h-screen flex flex-col shadow-2xl bg-[var(--bg-main)] transition-all border-x border-[var(--border-muted)]">
                 <LanguageToggle lang={lang} toggle={toggleLang} />
@@ -150,7 +150,7 @@ export default function App() {
                     <Route path="/accountant" element={<AccountantDashboard user={user} lang={lang} />} />
                   )}
                   
-                  <Route path="*" element={<Navigate to="/" />} />
+                  <Route path="/*" element={<Navigate to="/" />} />
                 </Routes>
                 <BottomNav user={user} role={user?.role || "USER"} lang={lang} />
               </div>
